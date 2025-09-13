@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Space {
+  id          String @id @default(cuid())
+  name        String
+  location    String
+  capacity    Int
+  description String?
+  active      Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  bookings Booking[]
+
+  @@map("espacios")
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  spaceId     String
+  clientEmail String
+  date        DateTime @db.Date
+  startTime   String   // Format HH:MM
+  endTime     String   // Format HH:MM
+  status      BookingStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  // Indexes for optimization
+  @@index([spaceId, date])
+  @@index([clientEmail])
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+}

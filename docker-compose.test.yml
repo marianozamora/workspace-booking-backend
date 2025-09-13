@@ -1,0 +1,34 @@
+# Docker Compose specific for testing
+version: "3.8"
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: booking-postgres-test
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: booking_test
+    ports:
+      - "5433:5432" # Different port to avoid conflict with development
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d booking_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # Configuration optimized for testing (faster)
+    command: >
+      postgres
+      -c fsync=off
+      -c synchronous_commit=off
+      -c full_page_writes=off
+      -c wal_buffers=16MB
+      -c checkpoint_segments=32
+      -c checkpoint_completion_target=0.9
+
+volumes:
+  postgres_test_data:
+    driver: local

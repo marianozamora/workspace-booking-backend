@@ -1,0 +1,55 @@
+{
+	"name": "workspace-booking-backend",
+	"version": "1.0.0",
+	"description": "Sistema de gestión de workspace-booking - API Backend",
+	"main": "dist/main.js",
+	"scripts": {
+		"dev": "tsx watch src/main.ts",
+		"build": "tsc",
+		"start": "node dist/main.js",
+		"test": "jest",
+		"test:watch": "jest --watch",
+		"test:coverage": "jest --coverage",
+		"prisma:generate": "prisma generate",
+		"prisma:migrate": "prisma migrate dev",
+		"prisma:deploy": "prisma migrate deploy",
+		"prisma:seed": "tsx prisma/seed.ts",
+		"db:verify": "tsx scripts/verify-database.ts",
+		"docker:build": "docker build -t workspace-booking-api .",
+		"docker:run": "docker run -p 3000:3000 workspace-booking-api"
+	},
+	"keywords": [
+		"fastify",
+		"typescript",
+		"hexagonal",
+		"prisma",
+		"workspace-booking"
+	],
+	"author": "Mariano Zamora",
+	"license": "MIT",
+	"dependencies": {
+		"@fastify/cors": "^8.4.0",
+		"@fastify/swagger": "^8.12.0",
+		"@fastify/swagger-ui": "^2.0.0",
+		"@prisma/client": "^5.6.0",
+		"date-fns": "^2.30.0",
+		"fastify": "^4.24.3",
+		"pino": "^8.16.1",
+		"zod": "^3.22.4"
+	},
+	"devDependencies": {
+		"@types/jest": "^29.5.8",
+		"@types/node": "^20.9.0",
+		"@typescript-eslint/eslint-plugin": "^6.11.0",
+		"@typescript-eslint/parser": "^6.11.0",
+		"eslint": "^8.54.0",
+		"jest": "^29.7.0",
+		"prisma": "^5.6.0",
+		"ts-jest": "^29.1.1",
+		"tsx": "^4.1.0",
+		"typescript": "^5.2.2"
+	},
+	"engines": {
+		"node": ">=22.0.0"
+	}
+}
