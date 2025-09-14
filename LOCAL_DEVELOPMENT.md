@@ -24,8 +24,24 @@
    ```
 
 3. **Open your browser:**
+
    - API: http://localhost:3000
+   - API Documentation: http://localhost:3000/docs
    - Database Admin (Adminer): http://localhost:8080 (if enabled)
+
+4. **Test the API:**
+
+   ```bash
+   # Test health endpoint (no API key required)
+   curl http://localhost:3000/health
+
+   # Get API information (no API key required)
+   curl http://localhost:3000/api
+
+   # Test API v1 endpoints (requires API key)
+   curl -H "X-API-Key: your-secure-api-key-here-change-in-production" \
+        http://localhost:3000/api/v1/spaces
+   ```
 
 ## Daily Development Commands
 
@@ -62,7 +78,54 @@ make docker-logs    # View PostgreSQL logs
 make docker-psql    # Connect to PostgreSQL directly
 ```
 
+## API Usage
+
+The API requires authentication for all endpoints except `/health`. Include the API key in your requests:
+
+```bash
+# Get all spaces
+curl -H "X-API-Key: your-secure-api-key-here-change-in-production" \
+     http://localhost:3000/api/v1/spaces
+
+# Get all bookings
+curl -H "X-API-Key: your-secure-api-key-here-change-in-production" \
+     http://localhost:3000/api/v1/bookings
+
+# Create a booking
+curl -X POST \
+     -H "X-API-Key: your-secure-api-key-here-change-in-production" \
+     -H "Content-Type: application/json" \
+     -d '{"spaceId":"space-id","clientEmail":"test@example.com","date":"2025-09-14","startTime":"09:00","endTime":"10:00"}' \
+     http://localhost:3000/api/v1/bookings
+```
+
+**API Versioning:**
+
+- Current version: **v1**
+- Base path: `/api/v1/`
+- Future versions will be available at `/api/v2/`, etc.
+
+**API Key Location:**
+
+- Environment variable: `API_KEY` in `.env` file
+- Default value: `your-secure-api-key-here-change-in-production`
+- Header name: `X-API-Key`
+
 ## Troubleshooting
+
+### API Authentication Issues
+
+```bash
+# Error: {"error":"Unauthorized","message":"Invalid or missing API Key"}
+# Solution: Include the X-API-Key header in your request
+
+# Check your API key in .env file
+cat .env | grep API_KEY
+
+# Test with correct API key
+curl -H "X-API-Key: your-secure-api-key-here-change-in-production" \
+     http://localhost:3000/api/v1/spaces
+```
 
 ### Database connection issues
 

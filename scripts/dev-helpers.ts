@@ -311,18 +311,20 @@ FRONTEND_URL="http://localhost:3001"`;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Main execution
-const command = process.argv[2] as keyof typeof commands;
-const args = process.argv.slice(3);
+(async () => {
+	const command = process.argv[2] as keyof typeof commands;
+	const args = process.argv.slice(3);
 
-if (!command || !commands[command]) {
-	commands.help();
-	process.exit(1);
-}
+	if (!command || !commands[command]) {
+		commands.help();
+		process.exit(1);
+	}
 
-// Execute command
-try {
-	await commands[command](...args);
-} catch (error) {
-	console.error("❌ Error executing command:", error);
-	process.exit(1);
-}
+	// Execute command
+	try {
+		await commands[command](...args);
+	} catch (error) {
+		console.error("❌ Error executing command:", error);
+		process.exit(1);
+	}
+})();

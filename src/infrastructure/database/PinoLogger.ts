@@ -6,14 +6,26 @@ export class PinoLogger implements Logger {
 		level: process.env.LOG_LEVEL || "info",
 		transport:
 			process.env.NODE_ENV === "development"
-				? {
-						target: "pino-pretty",
-						options: {
-							colorize: true,
-						},
-				  }
+				? this.createTransport()
 				: undefined,
 	});
+
+	private createTransport() {
+		try {
+			// Try to use pino-pretty if available
+			require.resolve("pino-pretty");
+			return {
+				target: "pino-pretty",
+				options: {
+					colorize: true,
+				},
+			};
+		} catch {
+			// Fallback to standard JSON logging if pino-pretty is not available
+			console.warn("⚠️  pino-pretty not found, using standard JSON logging");
+			return undefined;
+		}
+	}
 
 	info(message: string, data?: any): void {
 		this.logger.info(data, message);

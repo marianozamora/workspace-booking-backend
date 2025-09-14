@@ -13,17 +13,22 @@ export function setupRoutes(
 	// Authentication middleware for all routes
 	fastify.addHook("preHandler", authenticateApiKey);
 
+	// API v1 routes
 	// Spaces CRUD routes
-	RouteHelper.registerCrudRoutes(fastify, "/api/spaces", spacesController);
+	RouteHelper.registerCrudRoutes(fastify, "/api/v1/spaces", spacesController);
 
 	// Bookings CRUD routes
-	RouteHelper.registerCrudRoutes(fastify, "/api/bookings", bookingsController);
+	RouteHelper.registerCrudRoutes(
+		fastify,
+		"/api/v1/bookings",
+		bookingsController
+	);
 
 	// Additional booking-specific routes
 	RouteHelper.registerRoute(
 		fastify,
 		"PATCH",
-		"/api/bookings/:id/cancel",
+		"/api/v1/bookings/:id/cancel",
 		bookingsController.cancel,
 		bookingsController
 	);

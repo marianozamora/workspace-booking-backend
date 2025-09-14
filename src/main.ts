@@ -134,6 +134,36 @@ export async function createApp() {
 		};
 	});
 
+	// API info route
+	fastify.get("/api", async () => {
+		return {
+			name: "Workspace Booking API",
+			description: "Workspace reservation management system",
+			version: "1.0.0",
+			apiVersions: {
+				current: "v1",
+				available: ["v1"],
+				deprecated: [],
+			},
+			endpoints: {
+				health: "/health",
+				docs: "/docs",
+				api: {
+					v1: {
+						base: "/api/v1",
+						spaces: "/api/v1/spaces",
+						bookings: "/api/v1/bookings",
+					},
+				},
+			},
+			authentication: {
+				type: "API Key",
+				header: "X-API-Key",
+				required: true,
+			},
+		};
+	});
+
 	// Hook to close connections
 	fastify.addHook("onClose", async () => {
 		await prisma.$disconnect();
@@ -173,13 +203,14 @@ async function initializeDatabase() {
 		console.log("✅ Database connected successfully");
 
 		// Verify tables exist
-		await prisma.espacio.findFirst();
-		await prisma.reserva.findFirst();
+		await prisma.space.findFirst();
+		await prisma.booking.findFirst();
 		console.log("✅ Database schema verified");
 	} catch (error) {
 		console.error("❌ Error connecting to database:", error);
-		process.exit(1);
+		throw error; // Re-throw to let the caller handle it
 	} finally {
+		// Always disconnect this test instance
 		await prisma.$disconnect();
 	}
 }
@@ -201,7 +232,12 @@ async function start() {
 		}
 
 		// Initialize database
-		await initializeDatabase();
+		try {
+			await initializeDatabase();
+		} catch (error) {
+			console.error("❌ Database initialization failed:", error);
+			process.exit(1);
+		}
 
 		// Create and configure the application
 		const app = await createApp();
