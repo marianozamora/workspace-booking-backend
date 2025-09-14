@@ -1,0 +1,77 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file (use docker secrets instead)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.railway
+
+# Development files
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Build outputs (will be created in container)
+dist/
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.git
+.gitignore
+
+# Railway
+railway.json
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Local development
+docker-compose*.yml
+Makefile
+LOCAL_DEVELOPMENT.md
+RAILWAY_DEPLOY.md
+
+# Scripts not needed in production
+scripts/dev-helpers.ts
+scripts/verify-database.ts

@@ -1,0 +1,13 @@
+[phases.build]
+nixPkgs = ["nodejs_22", "yarn"]
+cmds = [
+    "yarn install --frozen-lockfile",
+    "yarn build",
+    "yarn prisma:generate"
+]
+
+[phases.start]
+cmd = "./scripts/railway-start.sh"
+
+[variables]
+NODE_ENV = "production"

@@ -59,7 +59,9 @@ export async function createApp() {
 				{
 					url:
 						process.env.NODE_ENV === "production"
-							? process.env.API_URL || "https://your-api.railway.app"
+							? process.env.RAILWAY_STATIC_URL ||
+							  process.env.API_URL ||
+							  "https://your-api.railway.app"
 							: `http://localhost:${PORT}`,
 				},
 			],
