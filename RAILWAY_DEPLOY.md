@@ -106,14 +106,15 @@ railway run yarn railway:seed
 
 ## Configuración automática
 
-Este proyecto incluye:
+Este proyecto está optimizado para Railway con:
 
-✅ `railway.json` - Configuración de build y deploy
-✅ `Dockerfile` - Multi-stage build optimizado
-✅ `package.json` - Scripts específicos para Railway
-✅ Migraciones automáticas en deploy
-✅ Health checks configurados
-✅ Logging optimizado para producción
+✅ **Auto-detección**: Railway detecta automáticamente Node.js
+✅ **Node.js 20**: Configurado en `.nvmrc` y `package.json`
+✅ **Yarn**: Detectado automáticamente por `yarn.lock`
+✅ **Migraciones automáticas**: Se ejecutan en el script `start`
+✅ **Health checks**: Configurados para producción
+✅ **Logging**: Optimizado para Railway
+✅ **Dockerfile**: Multi-stage build como fallback
 
 ## Solución de problemas
 

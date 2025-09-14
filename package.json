@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "tsx watch src/main.ts",
 		"build": "tsc",
-		"start": "node dist/main.js",
+		"start": "yarn prisma:deploy && node dist/main.js",
 		"postbuild": "prisma generate",
 		"railway:setup": "prisma migrate deploy && prisma generate",
 		"railway:seed": "tsx prisma/seed.ts",
@@ -56,6 +56,6 @@
 		"typescript": "^5.2.2"
 	},
 	"engines": {
-		"node": ">=22.0.0"
+		"node": ">=20.0.0"
 	}
 }
