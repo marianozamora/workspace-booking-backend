@@ -4,15 +4,44 @@ import {
 	CreateSpaceDto,
 	UpdateSpaceDto,
 } from "@/application/use-cases";
-import { CreateSpaceSchema, UpdateSpaceSchema } from "./schemas";
+import {
+	CreateSpaceSchema,
+	UpdateSpaceSchema,
+	SpaceFiltersSchema,
+} from "./schemas";
 import { ApiResponse, EntitySerializer } from "./ApiResponse";
 
 export class SpacesController {
 	constructor(private readonly spaceUseCases: SpaceUseCases) {}
 
-	async getAll(request: FastifyRequest, reply: FastifyReply) {
+	async getAll(
+		request: FastifyRequest<{
+			Querystring: {
+				availableOnly?: string;
+				capacity?: string;
+			};
+		}>,
+		reply: FastifyReply
+	) {
 		try {
-			const spaces = await this.spaceUseCases.getAllSpaces();
+			const filtersValidation = SpaceFiltersSchema.safeParse(request.query);
+
+			if (!filtersValidation.success) {
+				return ApiResponse.validationError(reply, filtersValidation.error.errors);
+			}
+
+			const filters = filtersValidation.data;
+			let spaces = await this.spaceUseCases.getAllSpaces();
+
+			// Apply filters
+			if (filters.availableOnly) {
+				spaces = spaces.filter(space => space.isActive());
+			}
+
+			if (filters.capacity) {
+				spaces = spaces.filter(space => space.getCapacity() >= filters.capacity!);
+			}
+
 			const serializedSpaces = spaces.map(EntitySerializer.space);
 			return ApiResponse.success(reply, serializedSpaces);
 		} catch (error) {
@@ -47,6 +76,14 @@ export class SpacesController {
 			if (!validation.success) {
 				return ApiResponse.validationError(reply, validation.error.errors);
 			}
+
+			const space = await this.spaceUseCases.createSpace(validation.data);
+			const serializedSpace = EntitySerializer.space(space);
+			return ApiResponse.created(
+				reply,
+				serializedSpace,
+				"Space created successfully"
+			);
 		} catch (error) {
 			return ApiResponse.error(reply, "Error creating space");
 		}

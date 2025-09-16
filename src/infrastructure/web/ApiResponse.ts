@@ -8,6 +8,17 @@ export class ApiResponse {
 		});
 	}
 
+	static created<T>(reply: FastifyReply, data: T, message?: string) {
+		const response: any = {
+			success: true,
+			data,
+		};
+		if (message) {
+			response.message = message;
+		}
+		return reply.code(201).send(response);
+	}
+
 	static error(
 		reply: FastifyReply,
 		message: string,

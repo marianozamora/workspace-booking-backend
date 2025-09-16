@@ -23,7 +23,6 @@ export class PrismaBookingsRepository
 		filters?: BookingFilters
 	): Promise<PaginationResult<Booking>> {
 		const skip = (page - 1) * limit;
-
 		const where = this.buildWhereClause(filters);
 
 		const [bookings, total] = await Promise.all([
@@ -31,7 +30,7 @@ export class PrismaBookingsRepository
 				where,
 				skip,
 				take: limit,
-				orderBy: [{ date: "desc" }, { startTime: "asc" }],
+				orderBy: [{ createdAt: "desc" }, { date: "desc" }, { startTime: "asc" }],
 				include: {
 					space: true,
 				},
@@ -82,7 +81,9 @@ export class PrismaBookingsRepository
 	}
 
 	private buildWhereClause(filters?: BookingFilters) {
-		if (!filters) return {};
+		if (!filters) {
+			return {};
+		}
 
 		const where: any = {};
 

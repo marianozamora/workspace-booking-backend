@@ -17,7 +17,7 @@ export class SpaceMapper implements Mapper<Space, PrismaSpace> {
 			prismaSpace.name,
 			prismaSpace.location,
 			prismaSpace.capacity,
-			prismaSpace.description,
+			prismaSpace.description ?? undefined,
 			prismaSpace.active,
 			prismaSpace.createdAt,
 			prismaSpace.updatedAt

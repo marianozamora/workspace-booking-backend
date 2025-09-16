@@ -1,0 +1,55 @@
+# Railway ignore file - exclude files not needed for production build
+
+# Development files
+
+.env
+.env.local
+.env.\*.local
+
+# Build artifacts
+
+dist/
+node_modules/
+
+# Development dependencies
+
+yarn.lock
+
+# Documentation
+
+\*.md
+docs/
+
+# IDE files
+
+.vscode/
+.idea/
+_.swp
+_.swo
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# Git
+
+.git/
+.gitignore
+
+# Docker (using Railway's native buildpack instead)
+
+Dockerfile
+.dockerignore
+
+# Testing
+
+coverage/
+jest.config.js
+**/\*.test.ts
+**/\*.spec.ts
+
+# Local development
+
+Makefile
+LOCAL_DEVELOPMENT.md

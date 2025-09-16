@@ -1,9 +1,12 @@
 {
 	"$schema": "https://railway.app/railway.schema.json",
 	"build": {
-		"buildCommand": "npm install && npm run build"
+		"buildCommand": "yarn install --frozen-lockfile && yarn build",
+		"watchPatterns": ["src/**", "prisma/**"]
 	},
 	"deploy": {
-		"startCommand": "npm start"
+		"startCommand": "yarn start",
+		"healthcheckPath": "/health",
+		"healthcheckTimeout": 30
 	}
 }

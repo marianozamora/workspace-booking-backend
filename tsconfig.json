@@ -22,8 +22,12 @@
 			"@/application/*": ["src/application/*"],
 			"@/infrastructure/*": ["src/infrastructure/*"],
 			"@/shared/*": ["src/shared/*"]
-		}
+		},
+		"moduleResolution": "node"
 	},
-	"include": ["src/**/*", "tests/**/*"],
-	"exclude": ["node_modules", "dist", "coverage"]
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "dist", "coverage", "tests", "prisma"],
+	"ts-node": {
+		"require": ["tsconfig-paths/register"]
+	}
 }

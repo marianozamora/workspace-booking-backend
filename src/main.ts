@@ -51,30 +51,89 @@ export async function createApp() {
 		openapi: {
 			openapi: "3.0.0",
 			info: {
-				title: "Bookings API",
-				description: "Workspace booking management system",
+				title: "Workspace Booking API",
+				description: `
+# Workspace Booking Management System
+
+A comprehensive REST API for managing workspace reservations and bookings.
+
+## Features
+- **Space Management**: Create, read, update, and delete workspace spaces
+- **Booking Management**: Full CRUD operations for workspace reservations
+- **Authentication**: Secure API key-based authentication
+- **Filtering & Pagination**: Advanced filtering and pagination support
+- **Business Logic**: Automatic conflict detection and validation
+
+## Authentication
+All endpoints (except health checks) require an API key to be provided in the \`X-API-Key\` header.
+
+## Rate Limiting
+The API implements rate limiting to ensure fair usage. Please refer to response headers for current limits.
+
+## Error Handling
+The API returns consistent error responses with appropriate HTTP status codes and descriptive messages.
+				`,
 				version: "1.0.0",
+				contact: {
+					name: "API Support",
+					email: "support@workspace-booking.com",
+				},
+				license: {
+					name: "MIT",
+					url: "https://opensource.org/licenses/MIT",
+				},
 			},
 			servers: [
 				{
 					url:
 						process.env.NODE_ENV === "production"
-							? process.env.RAILWAY_STATIC_URL ||
-							  process.env.API_URL ||
-							  "https://your-api.railway.app"
+							? "https://workspace-booking-backend-production.up.railway.app"
 							: `http://localhost:${PORT}`,
+					description:
+						process.env.NODE_ENV === "production"
+							? "Production server"
+							: "Development server",
 				},
 			],
 			components: {
 				securitySchemes: {
-					apiKey: {
+					ApiKeyAuth: {
 						type: "apiKey",
 						name: "X-API-Key",
 						in: "header",
+						description:
+							"API key for authentication. Contact support to obtain your API key.",
 					},
 				},
+				schemas: {},
 			},
-			security: [{ apiKey: [] }],
+			security: [
+				{
+					ApiKeyAuth: [],
+				},
+			],
+			tags: [
+				{
+					name: "Health",
+					description: "Health check and monitoring endpoints",
+				},
+				{
+					name: "Information",
+					description: "API information and metadata",
+				},
+				{
+					name: "Development",
+					description: "Development and debugging endpoints",
+				},
+				{
+					name: "Spaces",
+					description: "Workspace space management operations",
+				},
+				{
+					name: "Bookings",
+					description: "Workspace booking and reservation operations",
+				},
+			],
 		},
 	});
 
@@ -121,7 +180,10 @@ export async function createApp() {
 
 	// Controllers
 	const spacesController = new SpacesController(spaceUseCases);
-	const bookingsController = new BookingsController(bookingUseCases);
+	const bookingsController = new BookingsController(
+		bookingUseCases,
+		spaceUseCases
+	);
 
 	// Configure routes
 	setupRoutes(fastify, spacesController, bookingsController);
@@ -164,6 +226,24 @@ export async function createApp() {
 				required: true,
 			},
 		};
+	});
+
+	// Debug route
+	fastify.get("/debug", async () => {
+		try {
+			return {
+				env: process.env.NODE_ENV,
+				port: PORT,
+				host: HOST,
+				timestamp: new Date().toISOString(),
+				routes: fastify.printRoutes(),
+			};
+		} catch (error) {
+			return {
+				error: error instanceof Error ? error.message : String(error),
+				timestamp: new Date().toISOString(),
+			};
+		}
 	});
 
 	// Hook to close connections
@@ -222,14 +302,10 @@ async function start() {
 	try {
 		// Verify critical environment variables
 		const requiredEnvVars = ["DATABASE_URL", "API_KEY"];
-		const missingVars = requiredEnvVars.filter(
-			(varName) => !process.env[varName]
-		);
+		const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 		if (missingVars.length > 0) {
-			console.error(
-				`❌ Missing environment variables: ${missingVars.join(", ")}`
-			);
+			console.error(`❌ Missing environment variables: ${missingVars.join(", ")}`);
 			process.exit(1);
 		}
 
@@ -277,7 +353,7 @@ process.on("unhandledRejection", (reason, promise) => {
 	process.exit(1);
 });
 
-process.on("uncaughtException", (error) => {
+process.on("uncaughtException", error => {
 	console.error("❌ Uncaught Exception:", error);
 	process.exit(1);
 });

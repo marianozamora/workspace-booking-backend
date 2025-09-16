@@ -1,6 +1,4 @@
-// Export all ports and interfaces
+// Export essential ports and interfaces
 export * from "./SpacesRepository";
 export * from "./BookingsRepository";
-export * from "./ExternalServices";
-export * from "./BusinessRulesValidator";
-export * from "./Events";
+export * from "./CommonInterfaces";

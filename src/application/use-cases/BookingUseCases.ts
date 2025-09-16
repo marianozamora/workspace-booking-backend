@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { Booking } from "@/domain/entities";
 import {
 	BookingsRepository,
@@ -61,16 +62,14 @@ export class BookingUseCases {
 		);
 
 		if (!validation.isValid) {
-			const error = new Error(
-				`Validation error: ${validation.errors.join(", ")}`
-			);
+			const error = new Error(`Validation error: ${validation.errors.join(", ")}`);
 			this.logger.error("Error in booking validation", error, dto);
 			throw error;
 		}
 
 		// Create domain entity
-		const booking = Booking.create(
-			crypto.randomUUID(),
+		const booking = Booking.createNew(
+			randomUUID(),
 			dto.spaceId,
 			dto.clientEmail,
 			date,

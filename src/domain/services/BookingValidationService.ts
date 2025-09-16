@@ -65,15 +65,14 @@ export class BookingValidationService {
 		clientEmail: string,
 		date: Date
 	): Promise<ValidationResult> {
-		const startOfWeek = this.dateService.startOfWeek(date);
-		const endOfWeek = this.dateService.endOfWeek(date);
+		const startOfWeek = this.dateService.getStartOfWeek(date);
+		const endOfWeek = this.dateService.getEndOfWeek(date);
 
-		const activeBookings =
-			await this.bookingsRepository.findActiveByClientInWeek(
-				clientEmail,
-				startOfWeek,
-				endOfWeek
-			);
+		const activeBookings = await this.bookingsRepository.findActiveByClientInWeek(
+			clientEmail,
+			startOfWeek,
+			endOfWeek
+		);
 
 		const MAX_BOOKINGS_PER_WEEK = 3;
 
@@ -103,7 +102,7 @@ export class BookingValidationService {
 
 		// Filter active bookings and exclude current booking if editing
 		const activeBookings = existingBookings.filter(
-			(booking) => booking.isActive() && booking.id !== excludeBookingId
+			booking => booking.isActive() && booking.id !== excludeBookingId
 		);
 
 		// Create temporary booking to validate conflicts
@@ -117,7 +116,7 @@ export class BookingValidationService {
 				endTime
 			);
 
-			const conflictingBooking = activeBookings.find((booking) =>
+			const conflictingBooking = activeBookings.find(booking =>
 				tempBooking.conflictsWith(booking)
 			);
 
@@ -135,9 +134,7 @@ export class BookingValidationService {
 			return {
 				isValid: false,
 				errors: [
-					error instanceof Error
-						? error.message
-						: "Error in time slot validation",
+					error instanceof Error ? error.message : "Error in time slot validation",
 				],
 			};
 		}

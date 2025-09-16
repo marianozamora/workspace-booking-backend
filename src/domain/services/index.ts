@@ -1,4 +1,2 @@
-// Export all domain services
+// Export essential domain services
 export * from "./BookingValidationService";
-export * from "./AvailabilityService";
-export * from "./StatisticsService";

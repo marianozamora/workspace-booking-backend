@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import {
 	BookingUseCases,
+	SpaceUseCases,
 	CreateBookingDto,
 	UpdateBookingDto,
 } from "@/application/use-cases";
@@ -11,9 +12,13 @@ import {
 	PaginationSchema,
 	BookingFiltersSchema,
 } from "./schemas";
+import { ApiResponse, EntitySerializer } from "./ApiResponse";
 
 export class BookingsController {
-	constructor(private readonly bookingUseCases: BookingUseCases) {}
+	constructor(
+		private readonly bookingUseCases: BookingUseCases,
+		private readonly spaceUseCases: SpaceUseCases
+	) {}
 
 	async getAll(
 		request: FastifyRequest<{
@@ -33,10 +38,7 @@ export class BookingsController {
 			const filtersValidation = BookingFiltersSchema.safeParse(request.query);
 
 			if (!paginationValidation.success || !filtersValidation.success) {
-				return reply.code(400).send({
-					error: "Bad Request",
-					message: "Invalid query parameters",
-				});
+				return ApiResponse.badRequest(reply, "Invalid query parameters");
 			}
 
 			const { page, limit } = paginationValidation.data;
@@ -44,14 +46,20 @@ export class BookingsController {
 
 			// Convert filters to proper types
 			const processedFilters: any = {};
-			if (filters.spaceId) processedFilters.spaceId = filters.spaceId;
-			if (filters.clientEmail)
+			if (filters.spaceId) {
+				processedFilters.spaceId = filters.spaceId;
+			}
+			if (filters.clientEmail) {
 				processedFilters.clientEmail = filters.clientEmail;
-			if (filters.date) processedFilters.date = new Date(filters.date);
+			}
+			if (filters.date) {
+				processedFilters.date = new Date(filters.date);
+			}
 			if (filters.status) {
 				// Map string status to BookingStatus enum
 				const statusMap: Record<string, BookingStatus> = {
 					ACTIVE: BookingStatus.ACTIVE,
+					CONFIRMED: BookingStatus.ACTIVE, // Map frontend CONFIRMED to backend ACTIVE
 					CANCELLED: BookingStatus.CANCELLED,
 					COMPLETED: BookingStatus.COMPLETED,
 				};
@@ -64,19 +72,52 @@ export class BookingsController {
 				processedFilters
 			);
 
-			return reply.send({
-				success: true,
-				data: result.items.map((booking) => ({
-					id: booking.id,
-					spaceId: booking.getSpaceId(),
-					clientEmail: booking.getClientEmail(),
-					date: booking.getDate(),
-					startTime: booking.getStartTime(),
-					endTime: booking.getEndTime(),
-					status: booking.getStatus(),
-					createdAt: booking.createdAt,
-					updatedAt: booking.updatedAt,
-				})),
+			// Fetch space data for each booking
+			const bookingsWithSpaces = await Promise.all(
+				result.items.map(async booking => {
+					try {
+						const space = await this.spaceUseCases.getSpaceById(booking.getSpaceId());
+						return {
+							id: booking.id,
+							spaceId: booking.getSpaceId(),
+							space: {
+								id: space.id,
+								name: space.getName(),
+								location: space.getLocation(),
+								capacity: space.getCapacity(),
+								description: space.getDescription(),
+								active: space.isActive(),
+								createdAt: space.createdAt,
+								updatedAt: space.updatedAt,
+							},
+							clientEmail: booking.getClientEmail(),
+							date: booking.getDate(),
+							startTime: booking.getStartTime(),
+							endTime: booking.getEndTime(),
+							status: booking.getStatus(),
+							createdAt: booking.createdAt,
+							updatedAt: booking.updatedAt,
+						};
+					} catch (error) {
+						// If space not found, return booking without space data
+						return {
+							id: booking.id,
+							spaceId: booking.getSpaceId(),
+							space: null,
+							clientEmail: booking.getClientEmail(),
+							date: booking.getDate(),
+							startTime: booking.getStartTime(),
+							endTime: booking.getEndTime(),
+							status: booking.getStatus(),
+							createdAt: booking.createdAt,
+							updatedAt: booking.updatedAt,
+						};
+					}
+				})
+			);
+
+			return ApiResponse.success(reply, {
+				bookings: bookingsWithSpaces,
 				pagination: {
 					page: result.page,
 					limit: result.limit,
@@ -85,10 +126,7 @@ export class BookingsController {
 				},
 			});
 		} catch (error) {
-			return reply.code(500).send({
-				error: "Internal Server Error",
-				message: "Error getting bookings",
-			});
+			return ApiResponse.error(reply, "Error getting bookings");
 		}
 	}
 
@@ -100,32 +138,36 @@ export class BookingsController {
 			const { id } = request.params;
 			const booking = await this.bookingUseCases.getBookingById(id);
 
-			return reply.send({
-				success: true,
-				data: {
-					id: booking.id,
-					spaceId: booking.getSpaceId(),
-					clientEmail: booking.getClientEmail(),
-					date: booking.getDate(),
-					startTime: booking.getStartTime(),
-					endTime: booking.getEndTime(),
-					status: booking.getStatus(),
-					createdAt: booking.createdAt,
-					updatedAt: booking.updatedAt,
-				},
-			});
-		} catch (error) {
-			if (error instanceof Error && error.message === "Booking not found") {
-				return reply.code(404).send({
-					error: "Not Found",
-					message: error.message,
-				});
+			// Fetch space data
+			let space = null;
+			try {
+				const spaceData = await this.spaceUseCases.getSpaceById(
+					booking.getSpaceId()
+				);
+				space = {
+					id: spaceData.id,
+					name: spaceData.getName(),
+					location: spaceData.getLocation(),
+					capacity: spaceData.getCapacity(),
+					description: spaceData.getDescription(),
+					active: spaceData.isActive(),
+					createdAt: spaceData.createdAt,
+					updatedAt: spaceData.updatedAt,
+				};
+			} catch (spaceError) {
+				// Space not found, continue without space data
 			}
 
-			return reply.code(500).send({
-				error: "Internal Server Error",
-				message: "Error getting booking",
-			});
+			const bookingData = {
+				...EntitySerializer.booking(booking),
+				space: space,
+			};
+			return ApiResponse.success(reply, bookingData);
+		} catch (error) {
+			if (error instanceof Error && error.message === "Booking not found") {
+				return ApiResponse.notFound(reply, error.message);
+			}
+			return ApiResponse.error(reply, "Error getting booking");
 		}
 	}
 
@@ -137,36 +179,20 @@ export class BookingsController {
 			const validation = CreateBookingSchema.safeParse(request.body);
 
 			if (!validation.success) {
-				return reply.code(400).send({
-					error: "Bad Request",
-					message: "Invalid input data",
-					details: validation.error.errors,
-				});
+				return ApiResponse.validationError(reply, validation.error.errors);
 			}
 
 			const booking = await this.bookingUseCases.createBooking(validation.data);
-
-			return reply.code(201).send({
-				success: true,
-				data: {
-					id: booking.id,
-					spaceId: booking.getSpaceId(),
-					clientEmail: booking.getClientEmail(),
-					date: booking.getDate(),
-					startTime: booking.getStartTime(),
-					endTime: booking.getEndTime(),
-					status: booking.getStatus(),
-					createdAt: booking.createdAt,
-					updatedAt: booking.updatedAt,
-				},
-				message: "Booking created successfully",
-			});
+			const serializedBooking = EntitySerializer.booking(booking);
+			return ApiResponse.created(
+				reply,
+				serializedBooking,
+				"Booking created successfully"
+			);
 		} catch (error) {
-			return reply.code(400).send({
-				error: "Bad Request",
-				message:
-					error instanceof Error ? error.message : "Error creating booking",
-			});
+			const message =
+				error instanceof Error ? error.message : "Error creating booking";
+			return ApiResponse.badRequest(reply, message);
 		}
 	}
 
@@ -182,11 +208,7 @@ export class BookingsController {
 			const validation = UpdateBookingSchema.safeParse(request.body);
 
 			if (!validation.success) {
-				return reply.code(400).send({
-					error: "Bad Request",
-					message: "Invalid input data",
-					details: validation.error.errors,
-				});
+				return ApiResponse.validationError(reply, validation.error.errors);
 			}
 
 			const booking = await this.bookingUseCases.updateBooking({
@@ -194,34 +216,15 @@ export class BookingsController {
 				...validation.data,
 			});
 
-			return reply.send({
-				success: true,
-				data: {
-					id: booking.id,
-					spaceId: booking.getSpaceId(),
-					clientEmail: booking.getClientEmail(),
-					date: booking.getDate(),
-					startTime: booking.getStartTime(),
-					endTime: booking.getEndTime(),
-					status: booking.getStatus(),
-					createdAt: booking.createdAt,
-					updatedAt: booking.updatedAt,
-				},
-				message: "Booking updated successfully",
-			});
+			const serializedBooking = EntitySerializer.booking(booking);
+			return ApiResponse.success(reply, serializedBooking);
 		} catch (error) {
 			if (error instanceof Error && error.message === "Booking not found") {
-				return reply.code(404).send({
-					error: "Not Found",
-					message: error.message,
-				});
+				return ApiResponse.notFound(reply, error.message);
 			}
-
-			return reply.code(400).send({
-				error: "Bad Request",
-				message:
-					error instanceof Error ? error.message : "Error updating booking",
-			});
+			const message =
+				error instanceof Error ? error.message : "Error updating booking";
+			return ApiResponse.badRequest(reply, message);
 		}
 	}
 
@@ -236,16 +239,9 @@ export class BookingsController {
 			return reply.code(204).send();
 		} catch (error) {
 			if (error instanceof Error && error.message === "Booking not found") {
-				return reply.code(404).send({
-					error: "Not Found",
-					message: error.message,
-				});
+				return ApiResponse.notFound(reply, error.message);
 			}
-
-			return reply.code(500).send({
-				error: "Internal Server Error",
-				message: "Error deleting booking",
-			});
+			return ApiResponse.error(reply, "Error deleting booking");
 		}
 	}
 
@@ -257,34 +253,15 @@ export class BookingsController {
 			const { id } = request.params;
 			const booking = await this.bookingUseCases.cancelBooking(id);
 
-			return reply.send({
-				success: true,
-				data: {
-					id: booking.id,
-					spaceId: booking.getSpaceId(),
-					clientEmail: booking.getClientEmail(),
-					date: booking.getDate(),
-					startTime: booking.getStartTime(),
-					endTime: booking.getEndTime(),
-					status: booking.getStatus(),
-					createdAt: booking.createdAt,
-					updatedAt: booking.updatedAt,
-				},
-				message: "Booking cancelled successfully",
-			});
+			const serializedBooking = EntitySerializer.booking(booking);
+			return ApiResponse.success(reply, serializedBooking);
 		} catch (error) {
 			if (error instanceof Error && error.message === "Booking not found") {
-				return reply.code(404).send({
-					error: "Not Found",
-					message: error.message,
-				});
+				return ApiResponse.notFound(reply, error.message);
 			}
-
-			return reply.code(400).send({
-				error: "Bad Request",
-				message:
-					error instanceof Error ? error.message : "Error cancelling booking",
-			});
+			const message =
+				error instanceof Error ? error.message : "Error cancelling booking";
+			return ApiResponse.badRequest(reply, message);
 		}
 	}
 }

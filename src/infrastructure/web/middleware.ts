@@ -9,7 +9,7 @@ const PUBLIC_ROUTES = [
 	"/docs",
 	"/docs/static",
 	"/docs/json",
-	"/api",
+	"/debug",
 ];
 
 export async function authenticateApiKey(
@@ -17,20 +17,18 @@ export async function authenticateApiKey(
 	reply: FastifyReply
 ) {
 	// Skip authentication for public routes
-	const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+	const isPublicRoute = PUBLIC_ROUTES.some(route =>
 		request.url.startsWith(route)
 	);
 
-	if (isPublicRoute) {
+	// Special case: exact match for /api info endpoint
+	const isApiInfoRoute = request.url === "/api";
+
+	if (isPublicRoute || isApiInfoRoute) {
 		return;
 	}
 
 	const apiKey = request.headers["x-api-key"] as string;
-
-	// Debug logging (uncomment for troubleshooting)
-	// console.log(`🔑 Auth check for ${request.method} ${request.url}`);
-	// console.log(`🔑 Expected API key: ${API_KEY}`);
-	// console.log(`🔑 Received API key: ${apiKey || "undefined"}`);
 
 	if (!apiKey || apiKey !== API_KEY) {
 		return reply.code(401).send({

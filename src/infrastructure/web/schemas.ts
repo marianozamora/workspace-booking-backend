@@ -16,8 +16,23 @@ export const UpdateSpaceSchema = z.object({
 	active: z.boolean().optional(),
 });
 
+export const SpaceFiltersSchema = z.object({
+	availableOnly: z
+		.string()
+		.optional()
+		.transform(val => val === "true" || val === "1"),
+	capacity: z
+		.string()
+		.optional()
+		.transform(val => (val ? parseInt(val, 10) : undefined))
+		.refine(
+			val => val === undefined || val > 0,
+			"Capacity must be greater than 0"
+		),
+});
+
 export const CreateBookingSchema = z.object({
-	spaceId: z.string().uuid("Space ID must be a valid UUID"),
+	spaceId: z.string().min(1, "Space ID is required"),
 	clientEmail: z.string().email("Invalid email"),
 	date: z
 		.string()
@@ -51,11 +66,11 @@ export const PaginationSchema = z.object({
 });
 
 export const BookingFiltersSchema = z.object({
-	spaceId: z.string().uuid().optional(),
+	spaceId: z.string().min(1).optional(),
 	clientEmail: z.string().optional(),
 	date: z
 		.string()
 		.regex(/^\d{4}-\d{2}-\d{2}$/)
 		.optional(),
-	status: z.enum(["ACTIVE", "CANCELLED", "COMPLETED"]).optional(),
+	status: z.enum(["ACTIVE", "CONFIRMED", "CANCELLED", "COMPLETED"]).optional(),
 });

@@ -5,9 +5,7 @@ export class PinoLogger implements Logger {
 	private readonly logger = pino({
 		level: process.env.LOG_LEVEL || "info",
 		transport:
-			process.env.NODE_ENV === "development"
-				? this.createTransport()
-				: undefined,
+			process.env.NODE_ENV === "development" ? this.createTransport() : undefined,
 	});
 
 	private createTransport() {

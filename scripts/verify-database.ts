@@ -1,37 +1,37 @@
-// Script para verificar que la DATABASE_URL funciona
+// Script to verify that DATABASE_URL works
 import { PrismaClient } from "@prisma/client";
 
 async function verifyDatabase() {
 	const DATABASE_URL = process.env.DATABASE_URL;
 
 	if (!DATABASE_URL) {
-		console.error("❌ DATABASE_URL no está definida en .env");
-		console.log("💡 Necesitas agregar algo como:");
+		console.error("❌ DATABASE_URL is not defined in .env");
+		console.log("💡 You need to add something like:");
 		console.log(
 			'   DATABASE_URL="postgresql://user:password@host:port/database"'
 		);
 		process.exit(1);
 	}
 
-	console.log("🔍 Verificando conexión a la base de datos...");
-	console.log(`📍 URL: ${DATABASE_URL.replace(/:[^:@]+@/, ":****@")}`); // Ocultar password
+	console.log("🔍 Verifying database connection...");
+	console.log(`📍 URL: ${DATABASE_URL.replace(/:[^:@]+@/, ":****@")}`); // Hide password
 
 	const prisma = new PrismaClient();
 
 	try {
-		// Intentar conectar
-		console.log("🔌 Conectando...");
+		// Try to connect
+		console.log("🔌 Connecting...");
 		await prisma.$connect();
-		console.log("✅ Conexión exitosa!");
+		console.log("✅ Connection successful!");
 
-		// Verificar versión de PostgreSQL
+		// Check PostgreSQL version
 		const result = (await prisma.$queryRaw`SELECT version()`) as any[];
-		const version = result[0]?.version || "Desconocida";
+		const version = result[0]?.version || "Unknown";
 		console.log(
 			`📊 PostgreSQL: ${version.split(" ")[0]} ${version.split(" ")[1]}`
 		);
 
-		// Verificar si las tablas existen
+		// Check if tables exist
 		console.log("🔍 Checking database structure...");
 
 		try {

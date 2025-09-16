@@ -1,57 +1,55 @@
-# Multi-stage build para optimizar el tamaño de la imagen
+# Multi-stage build optimized for Railway deployment
 
 # Stage 1: Build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
-COPY package.json yarn.lock ./
+# Copy package files
+COPY package.json package-lock.json* ./
 COPY tsconfig.json ./
 COPY prisma/ ./prisma/
+COPY scripts/ ./scripts/
 
-# Instalar dependencias
-RUN yarn install --frozen-lockfile
+# Install dependencies
+RUN npm ci --only=production=false
 
-# Copiar código fuente
+# Copy source code
 COPY src/ ./src/
 
-# Generar Prisma client
-RUN yarn prisma:generate
-
-# Compilar TypeScript
-RUN yarn build
+# Build application (includes TypeScript compilation and Prisma generation)
+RUN npm run build
 
 # Stage 2: Production
 FROM node:20-alpine AS production
 
-# Install dumb-init for signal handling
+# Install required packages
 RUN apk add --no-cache dumb-init openssl
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+RUN addgroup -g 1001 -S nodejs && adduser -S backend -u 1001 -G nodejs
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
-COPY package.json yarn.lock ./
+# Copy package files
+COPY package.json package-lock.json* ./
+COPY tsconfig.json ./
 COPY prisma/ ./prisma/
 
-# Instalar solo dependencias de producción
-RUN yarn install --frozen-lockfile --production=true && yarn cache clean
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
 
-# Copiar archivos compilados del builder
-COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+# Copy built application from builder stage
+COPY --from=builder --chown=backend:nodejs /app/dist ./dist
+COPY --from=builder --chown=backend:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
-# Cambiar a usuario no-root
-USER nextjs
+# Switch to non-root user
+USER backend
 
-# Exponer puerto
+# Expose port
 EXPOSE 3000
 
-# Variables de entorno por defecto
+# Environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
@@ -60,8 +58,8 @@ ENV HOST=0.0.0.0
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
-# Usar dumb-init como entrypoint para manejo correcto de señales
+# Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
 
-# Comando por defecto
-CMD ["node", "dist/main.js"]
+# Start application
+CMD ["npm", "start"]

@@ -23,7 +23,7 @@ model Space {
   // Relations
   bookings Booking[]
 
-  @@map("espacios")
+  @@map("spaces")
 }
 
 model Booking {

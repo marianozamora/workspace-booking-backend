@@ -20,7 +20,6 @@ export class Booking extends BaseEntity {
 		updatedAt: Date
 	) {
 		super(id, createdAt, updatedAt);
-		this.validateDate();
 	}
 
 	static create(
@@ -44,6 +43,29 @@ export class Booking extends BaseEntity {
 			createdAt,
 			updatedAt
 		);
+	}
+
+	static createNew(
+		id: string,
+		spaceId: string,
+		clientEmail: string,
+		date: Date,
+		startTime: string,
+		endTime: string,
+		status: BookingStatus = BookingStatus.ACTIVE
+	): Booking {
+		const booking = new Booking(
+			id,
+			spaceId,
+			Email.create(clientEmail),
+			date,
+			TimeSlot.create(startTime, endTime),
+			status,
+			new Date(),
+			new Date()
+		);
+		booking.validateDate();
+		return booking;
 	}
 
 	private validateDate(): void {

@@ -1,4 +1,4 @@
-// Export all infrastructure implementations
+// Export essential infrastructure implementations
 export * from "./mappers";
 export * from "./PrismaSpacesRepository";
 export * from "./PrismaBookingsRepository";
